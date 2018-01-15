@@ -4,36 +4,37 @@ import json
 import csv
 import time
 import re
-# from csvchklib import fib, fib2
-#import csvchklib
 import string
 
-# Written on Jan 12, 2018, coldest day in the office (8c)
+# Written on Jan 12, 2018, coldest day in the office (8 Celcius)
 
-#Todo
-# Check headers
-# if blank allowed, ignore other checks
+# TODO
+#
+# This program is a work in progress.
+#
+# 1. Load file from subfolder
+# 2. Check header names
+# 3. JSON multiple continious int/float value ranges [][][]]
+# 4. Verbose function to surporess warnings and matches
 
 
 FlagHeader = True  # file has a header
 
-sys.argv[1] = "big.csv"
-sys.argv[0] = "map.json"
+print ("csvchk - CSV file validation tool - version 1.0")
 
-print ("CHKCSV - CSV file validation tool - version 1.0")
-
-if (len(sys.argv) < 2):
-    sys.exit('Syntax: CHKCSV <data defintion file> <data definition map file>')
+if (len(sys.argv) < 3):
+    sys.exit('Syntax: csvchk <data definition map file> <data definition file>')
    
-DataDefinitionMapFileName = sys.argv[0]  
-DataFilename = sys.argv[1]        
+DataDefinitionMapFileName = sys.argv[1]  
+DataFileName = sys.argv[2]        
 DataDefinitionFileName = ""
 
 try:
 
     mapfile = open(DataDefinitionMapFileName, "r", encoding = "utf-8"); 
+
 except Exception as exception:
-    print ("Could not open data definition map file %s" %sys.argv[1])               
+    print ("Could not open data definition map file %s" % DataDefinitionMapFileName)               
     sys.exit(1)
     
 else:
@@ -41,23 +42,21 @@ else:
     mapfile.close() 
     maps  = mapdata['map']
     for mapping in maps:
-        check = mapping['regex']  
-        DataDefinitionFileName = mapping['file']      
+        check = mapping['regex']   
         regexp = re.compile(check)
-        match = regexp.match(mapping['file'])
+        match = regexp.match(DataFileName)
         if (match):
-            DataDefinitionFileName = mapping['file']     
+            print(" match")   
+            DataDefinitionFileName = mapping['file']
+        else:
+            print("No match %s" % check )     
             
-    #print("Definition file name = %s" % DataDefinitionFileName)               
-
-#sys.exit('ends')
-       
 try:
-
-    #file = open(sys.argv[1], "r+", encoding = "utf-8");
+    
     file = open(DataDefinitionFileName, "r", encoding = "utf-8"); 
 
 except Exception as exception:
+    #Old stuff from fooling around with Exceptions
     #type, value, traceback = sys.exc_info()
     #print('Error opening %s: %s %s' % (value.filename, value.strerror, type))       
     #sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]
@@ -70,21 +69,12 @@ else:
     #Load CSV definition  
     data = json.load(file)
     file.close()
-    
-    
-    print ("CSV data file: %s" % DataFilename, flush=True)
+     
+    print ("CSV data file: %s" % DataFileName, flush=True)
     print ("CSV data definition file: %s" % DataDefinitionFileName, flush=True)
     print ("CSV data definition file uses schema file: %s" % data['meta']['schema'], flush=True)   
-                                         
-    #print(data['fields'])
-    #print(data['fields'][0]['name'])
-    #print(data['fields'][0]['constraints']['required'])
-    #print(data['fields'][0]['constraints']['regex'])
-    
-    #filename = "sample.csv"
-    filename = "big.csv"
-    
-    with open(DataFilename, 'r') as csvfile:
+                                            
+    with open(DataFileName, 'r') as csvfile:
         #dialect = csv.Sniffer().sniff(csvfile.read(1024))
         reader = csv.reader(csvfile, delimiter=',')
         
@@ -178,7 +168,7 @@ else:
                 #if (rownr > 1000): break;     
                      
         except csv.Error as e:
-            sys.exit('file %s, line %d: %s' % (filename, reader.line_num, e))
+            sys.exit('file %s, line %d: %s' % (DataFileName, reader.line_num, e))
             
       
    
