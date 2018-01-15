@@ -12,12 +12,12 @@ With this JSON file the script will find the correct data definition file to use
    
 ## How to create definition files
 
-Create a 'Data definition file'
-Create a 'Data definition map' file to map  data definition files to the data filename
+- Create a 'Data definition file'
+- Create a 'Data definition map' file to map  data definition files to the data filename
 
 ## How to run
 
-Run the program csvchk \<data definition map file\> \<CSV file\>"
+Run the program csvchk \<data definition map file\> \<CSV file\>
 
 
 ## Known issues
