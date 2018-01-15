@@ -17,37 +17,52 @@ import string
 
 FlagHeader = True  # file has a header
 
+sys.argv[1] = "big.csv"
+sys.argv[0] = "map.json"
 
 print ("CHKCSV - CSV file validation tool - version 1.0")
-print ("Syntax: CHKCSV <data file> <data definition map file>")
+
+if (len(sys.argv) < 2):
+    sys.exit('Syntax: CHKCSV <data defintion file> <data definition map file>')
+   
+DataDefinitionMapFileName = sys.argv[0]  
+DataFilename = sys.argv[1]        
+DataDefinitionFileName = ""
 
 try:
 
-    mapfile = open("map.json", "r", encoding = "utf-8"); 
+    mapfile = open(DataDefinitionMapFileName, "r", encoding = "utf-8"); 
 except Exception as exception:
-    print ("Could not open data definition map file!")               
+    print ("Could not open data definition map file %s" %sys.argv[1])               
     sys.exit(1)
     
-else:  
-    mapdata = json.load(mapfile)
-    mapfile.close()
-    
-    
+else:
+    mapdata = json.load(mapfile)    
+    mapfile.close() 
+    maps  = mapdata['map']
+    for mapping in maps:
+        check = mapping['regex']  
+        DataDefinitionFileName = mapping['file']      
+        regexp = re.compile(check)
+        match = regexp.match(mapping['file'])
+        if (match):
+            DataDefinitionFileName = mapping['file']     
+            
+    #print("Definition file name = %s" % DataDefinitionFileName)               
 
-DefinitionFileName = "ict.json"
-
-
+#sys.exit('ends')
+       
 try:
 
     #file = open(sys.argv[1], "r+", encoding = "utf-8");
-    file = open(DefinitionFileName, "r", encoding = "utf-8"); 
+    file = open(DataDefinitionFileName, "r", encoding = "utf-8"); 
 
 except Exception as exception:
     #type, value, traceback = sys.exc_info()
     #print('Error opening %s: %s %s' % (value.filename, value.strerror, type))       
     #sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]
     #print('Error opening %s: %s %s' % (sys.exc_info()[0], sys.exc_info()[1], sys.exc_info()[2]))
-    print ("Could not open file!")               
+    print ("[ERROR] Could not open Data Definition file %s" % DataDefinitionFileName)               
     sys.exit(1)
 
 else:
@@ -56,11 +71,9 @@ else:
     data = json.load(file)
     file.close()
     
-       
-    filename = "big.csv"
     
-    print ("CSV data file: %s" % filename, flush=True)
-    print ("CSV data definition file: %s" % DefinitionFileName, flush=True)
+    print ("CSV data file: %s" % DataFilename, flush=True)
+    print ("CSV data definition file: %s" % DataDefinitionFileName, flush=True)
     print ("CSV data definition file uses schema file: %s" % data['meta']['schema'], flush=True)   
                                          
     #print(data['fields'])
@@ -71,7 +84,7 @@ else:
     #filename = "sample.csv"
     filename = "big.csv"
     
-    with open(filename, 'r') as csvfile:
+    with open(DataFilename, 'r') as csvfile:
         #dialect = csv.Sniffer().sniff(csvfile.read(1024))
         reader = csv.reader(csvfile, delimiter=',')
         
