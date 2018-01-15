@@ -17,7 +17,7 @@ Create a 'Data definition map' file to map  data definition files to the data fi
 
 ## How to run
 
-Run the program csvchk <data definition map file> <CSV file>
+Run the program csvchk \<data definition map file\> \<CSV file\>"
 
 
 ## Known issues
