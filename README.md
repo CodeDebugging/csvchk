@@ -15,7 +15,15 @@ With this JSON file the script will find the correct data definition file to use
 Create a 'Data definition file'
 Create a 'Data definition map' file to map  data definition files to the data filename
 
+## How to run
+
 Run the program csvchk <data definition map file> <CSV file>
 
+
+## Known issues
+
+1. All files need to be in the same folder. loading definition, map  and CSV files using a path prefix won't work.
+2. No header check yet  
+ 
 
  
