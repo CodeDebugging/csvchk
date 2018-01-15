@@ -1,0 +1,17 @@
+{
+     "map":
+	 [
+         {
+           	"regex": "data.csv",
+           	"file":  "definition.json"
+          }
+          {
+          	"regex": "data2.csv",
+           	"file":  "defintion.json"     
+          },
+          {
+          	"regex": "data[0-9]*.csv",
+           	"file":  "defintion.json"     
+          }
+       ]
+}
