@@ -22,12 +22,16 @@ import re
 # Allow header not to be required
 # split up code in routines and move to csvchklib package
 # regex check on header name in data-file (upper lower case etc..)
+# continue after row error , set maximum number of errors
+
 # 
 # CLOSED
 # 16/01/2018 Check header names
 # 16/01/2018 Check row data columns equal to header
 # 16/01/2018 Correct many bugs, excpetion handlers for file open and reads
 
+error_data_max = 5
+error_data_count = 0
 
 print ("csvchk - CSV file validation tool - version 1.0")
 
@@ -119,8 +123,7 @@ else:
                 except Exception as exception:
                     print ("Error: Failed to read data file header %s" % DataFileName)               
                     stop = True 
-             
-                           
+                                        
             if (stop ==True):
                 print("Error: Headers check Failed", end="", flush=True) 
                 sys.exit(1) 
@@ -128,83 +131,100 @@ else:
                 print("Header check PASS", end="", flush=True)
                 
             # Validate data records
-                
+             
+            print("\n")       
+            
             try:
-                
+                 
                 rownr = 0
-                for row in reader:     
-                    cols  = len(row)                                    
-                    # Check if number of columns in file are more  than in definition file.                            
+                result= ""
+                #print ("result: %d" % result, flush=True)   
+                
+                for row in reader:
+
+                    print("row:", rownr + 1, end='\n', flush=True)
+                                     
+                    cols  = len(row)
+                              
+                    # Check if number of columns in file are more  than in definition file.
+                                            
                     if (cols != defcols):
-                        sys.exit('Error - Columns in row not equal to definition !\n')                  
-                    colnr  = 0
-                    result = "" 
-                    while (colnr < cols):
-                        
-                        print("row:", rownr + 1, end='', flush=True),
-                        print(", col:", colnr, end="", flush=True)
-                        print(", title:", data['fields'][colnr]['name'] + "", end="", flush=True)
-                        print(", data:", row[colnr], end="\n", flush=True)
-                                                                       
-                        #if ((data['fields'][colnr]['constraints']['required'] == "true") and (row[colnr] == "")):                            
-                        #    result = data['fields'][colnr]['enforce']['required']
-                        #    print ( result, "- Required check", end="\r", flush=True)
-                        #    if (result == "fault"): break  
-    
-                        if ((data['fields'][colnr]['constraints']['blank'] == "false") and (row[colnr] == "")):
-                            result = data['fields'][colnr]['enforce']['blank']
-                            if (result != ""): print ( result, "- Blank check",end="\r", flush=True)
-                            if (result == "fault"): break
-                            
-                        if ((data['fields'][colnr]['constraints']['blank'] == "true") and (row[colnr] != "")):
-                            result = data['fields'][colnr]['enforce']['blank']
-                            if (result != ""): print ( result, "- Blank check",end="\r", flush=True)
-                            if (result == "fault"): break 
-                           
-                        if (data['fields'][colnr]['constraints']['blank'] == "false"):               
-                            values = data['fields'][colnr]['constraints']['values']
-                            count = 0
-                            if (values != ""):
-                                Found = False
-                                values = data['fields'][colnr]['constraints']['values']                             
-                                for value in values:
-                                    if (value == row[colnr]): Found = True;    
-                                if (Found == False):
-                                    result = data['fields'][colnr]['enforce']['values']
-                                    if (result != ""): print ( result, "- Invalid value, expected %s" % values, end="\r", flush=True)
-                                    if (result == "fault"): break
-                                                            
-                                          
-                            if ((data['fields'][colnr]['constraints']['regex'] != "")):
-                                check = data['fields'][colnr]['constraints']['regex']
-                                regexp = re.compile(check)
-                                match = regexp.match(row[colnr])
-                                if (not match):
-                                    result = data['fields'][colnr]['enforce']['regex']
-                                    if (result != "" ): print ( result, "- RegEx check, expected %s" % check, end="\r", flush=True)
-                                    if (result == "fault"): break
-                        
-                                fieldtype = data['fields'][colnr]['constraints']['type']                                      
-                                if (fieldtype == "int"):
-                                    minval = data['fields'][colnr]['constraints']['min']   
-                                    maxval = data['fields'][colnr]['constraints']['max']
-                                    value =  row[colnr]                  
-                                    if (value < minval ): 
-                                        result = data['fields'][colnr]['enforce']['min']
-                                        if (result != ""): print ( result, "- Number too low, expected < %s" % minval, end="\r", flush=True)
+                        result = "fault"
+                        print('Error - Columns in row not equal to definition !', flush=True)     
+                                               
+                    if (result != "fault"):
+                               
+                        colnr  = 0
+                        result = "" 
+                        while (colnr < cols):                     
+                            print("col:", colnr, end="", flush=True)
+                            print(", title:", data['fields'][colnr]['name'] + "", end="", flush=True)
+                            print(", data:", row[colnr], end="\n", flush=True)
+                                                                           
+                            #if ((data['fields'][colnr]['constraints']['required'] == "true") and (row[colnr] == "")):                            
+                            #    result = data['fields'][colnr]['enforce']['required']
+                            #    print ( result, "- Required check", end="\r", flush=True)
+                            #    if (result == "fault"): break  
+        
+                            if ((data['fields'][colnr]['constraints']['blank'] == "false") and (row[colnr] == "")):
+                                result = data['fields'][colnr]['enforce']['blank']
+                                if (result != ""): print ( result, "- Blank check",end="\r", flush=True)
+                                if (result == "fault"): break
+                                
+                            if ((data['fields'][colnr]['constraints']['blank'] == "true") and (row[colnr] != "")):
+                                result = data['fields'][colnr]['enforce']['blank']
+                                if (result != ""): print ( result, "- Blank check",end="\r", flush=True)
+                                if (result == "fault"): break 
+                               
+                            if (data['fields'][colnr]['constraints']['blank'] == "false"):               
+                                values = data['fields'][colnr]['constraints']['values']
+                                count = 0
+                                if (values != ""):
+                                    Found = False
+                                    values = data['fields'][colnr]['constraints']['values']                             
+                                    for value in values:
+                                        if (value == row[colnr]): Found = True;    
+                                    if (Found == False):
+                                        result = data['fields'][colnr]['enforce']['values']
+                                        if (result != ""): print ( result, "- Invalid value, expected %s" % values, end="\r", flush=True)
                                         if (result == "fault"): break
-                                    if (value > maxval ): 
-                                        result = data['fields'][colnr]['enforce']['max']
-                                        if (result != ""): print ( result, "- Number too high, expected > %s" % maxval,  end="\r", flush=True)
-                                        if (result == "fault"): break 
-    
-                        
-                        #time.sleep(.1)            
-                        colnr = colnr + 1
-                        print("", end="", flush=True)
+                                                                
+                                              
+                                if ((data['fields'][colnr]['constraints']['regex'] != "")):
+                                    check = data['fields'][colnr]['constraints']['regex']
+                                    regexp = re.compile(check)
+                                    match = regexp.match(row[colnr])
+                                    if (not match):
+                                        result = data['fields'][colnr]['enforce']['regex']
+                                        if (result != "" ): print ( result, "- RegEx check, expected %s" % check, end="\r", flush=True)
+                                        if (result == "fault"): break
+                            
+                                    fieldtype = data['fields'][colnr]['constraints']['type']                                      
+                                    if (fieldtype == "int"):
+                                        minval = data['fields'][colnr]['constraints']['min']   
+                                        maxval = data['fields'][colnr]['constraints']['max']
+                                        value =  row[colnr]                  
+                                        if (value < minval ): 
+                                            result = data['fields'][colnr]['enforce']['min']
+                                            if (result != ""): print ( result, "- Number too low, expected < %s" % minval, end="\r", flush=True)
+                                            if (result == "fault"): break
+                                        if (value > maxval ): 
+                                            result = data['fields'][colnr]['enforce']['max']
+                                            if (result != ""): print ( result, "- Number too high, expected > %s" % maxval,  end="\r", flush=True)
+                                            if (result == "fault"): break 
+        
+                            
+                            #time.sleep(.1)            
+                            colnr = colnr + 1
+                            #print("", end="", flush=True)
                     rownr = rownr + 1
                     
-                    if (result == "fault"):  sys.exit('\nError: Data fault condition encountered - Program exit !\n')                                
+                    if (result == "fault"):
+                        error_data_count = error_data_count + 1
+                        if (error_data_count > error_data_max):
+                            sys.exit('Error: Data fault condition encountered and maximum number of allowed errors exceeded')
+                        else:
+                            result = ""                                                                
                     #if (rownr > 1000): break;     
                          
             except csv.Error as e:
