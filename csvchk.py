@@ -2,36 +2,19 @@
 import sys
 import json
 import csv
-#import time
+import time
 import re
 #import string
-
 #from csvchklib import *
 #import cvschklib
 
-# Written on Jan 12, 2018, coldest day in the office (8 Celcius)
+# Started coding on Jan 12, 2018, coldest day in the office (8C)
 
-# HISTORY
-#
-# OPEN
-# Load files from sub-folder (parse filename)
-# JSON definition, to allow multiple continuous int/float value ranges [array] of min/max values
-# Verbose function to suppress all messages, warnings etc..
-# check on field type
-# Allow headers not be fixed to position in definition file.
-# Allow header not to be required
-# split up code in routines and move to csvchklib package
-# regex check on header name in data-file (upper lower case etc..)
-# continue after row error , set maximum number of errors
+start = time.time()
 
-# 
-# CLOSED
-# 16/01/2018 Check header names
-# 16/01/2018 Check row data columns equal to header
-# 16/01/2018 Correct many bugs, excpetion handlers for file open and reads
-
-error_data_max = 5
+error_data_max = 0
 error_data_count = 0
+verbose_level = 2
 
 print ("csvchk - CSV file validation tool - version 1.0")
 
@@ -51,7 +34,9 @@ except Exception as exception:
     sys.exit(1)
     
 else:
-    
+
+    print ("Reading data definition map file: %s" % DataDefinitionMapFileName, flush=True)
+       
     try:
         mapdata = json.load(mapfile)    
         mapfile.close() 
@@ -67,8 +52,12 @@ else:
                 #print("No match %s" % check )     
     except Exception as exception:
         print ("Error: Possible invalid map data definition map file %s" % DataDefinitionMapFileName)               
-        sys.exit(1) 
-            
+        sys.exit(1)
+        
+    if (DataDefinitionFileName == ""):
+        print ("Error: Data definition file not found using map file %s" % DataDefinitionMapFileName)               
+        sys.exit(1)     
+           
 try:
     
     deffile = open(DataDefinitionFileName, "r", encoding = "utf-8");
@@ -83,8 +72,10 @@ except Exception as exception:
     sys.exit(1)
 
 else:
-    #Load CSV definition
     
+   
+    #Load CSV definition
+  
     try:  
         data = json.load(deffile)
     except Exception as exception:
@@ -92,12 +83,15 @@ else:
         sys.exit(1) 
     else:
         deffile.close()
+        whitespaces = data['header']['whitespaces']         
      
     print ("CSV data file: %s" % DataFileName, flush=True)
     print ("CSV data definition file: %s" % DataDefinitionFileName, flush=True)
     print ("CSV data definition file uses schema file: %s" % data['meta']['schema'], flush=True)   
         
     defcols = 0
+    
+
         
     try:                             
         with open(DataFileName, 'r') as csvfile:
@@ -106,6 +100,7 @@ else:
             stop = False
     
             # Validate the header 
+       
             
             if (data['header']['required'] =="true"):
                 #print("Header check ", end="", flush=True),
@@ -115,9 +110,11 @@ else:
                     defcols = len(data['fields'])
                     #print ("cols = %d" % defcols)                   
                     while (colnr < defcols):
-                        name  = data['fields'][colnr]['name']  
-                        if (name != row[colnr]):
-                            print ("Error: Column names mismatch expected %s got %s" % (name, row[colnr]), flush=True)
+                        defname = data['fields'][colnr]['name'] 
+                        csvname = row[colnr]
+                        if (whitespaces == "true"): csvname = csvname.strip()
+                        if (defname != csvname):
+                            print ("Error: Column names mismatch expected \"%s\" got \"%s\"" % (defname, csvname), flush=True)
                             stop = True
                         colnr = colnr +1
                 except Exception as exception:
@@ -142,9 +139,9 @@ else:
                 
                 for row in reader:
 
-                    print("row:", rownr + 1, end='\n', flush=True)
-                                     
-                    cols  = len(row)
+                    if (verbose_level > 0):
+                        print("row:", rownr + 1, end='\n', flush=True)                                                             
+                    cols = len(row)
                               
                     # Check if number of columns in file are more  than in definition file.
                                             
@@ -156,10 +153,12 @@ else:
                                
                         colnr  = 0
                         result = "" 
-                        while (colnr < cols):                     
-                            print("col:", colnr, end="", flush=True)
-                            print(", title:", data['fields'][colnr]['name'] + "", end="", flush=True)
-                            print(", data:", row[colnr], end="\n", flush=True)
+                        while (colnr < cols):
+                            
+                            if (verbose_level > 1):                     
+                                print("col:", colnr, end="", flush=True)
+                                print(":", data['fields'][colnr]['name'] + "", end="", flush=True)
+                                print(":", row[colnr], end="\n", flush=True)
                                                                            
                             #if ((data['fields'][colnr]['constraints']['required'] == "true") and (row[colnr] == "")):                            
                             #    result = data['fields'][colnr]['enforce']['required']
@@ -168,12 +167,16 @@ else:
         
                             if ((data['fields'][colnr]['constraints']['blank'] == "false") and (row[colnr] == "")):
                                 result = data['fields'][colnr]['enforce']['blank']
-                                if (result != ""): print ( result, "- Blank check",end="\r", flush=True)
+                                if (result != ""):
+                                    if (verbose_level > 1):
+                                        print ( result, "- Expected data but field was blank",end="\r", flush=True)
                                 if (result == "fault"): break
                                 
                             if ((data['fields'][colnr]['constraints']['blank'] == "true") and (row[colnr] != "")):
                                 result = data['fields'][colnr]['enforce']['blank']
-                                if (result != ""): print ( result, "- Blank check",end="\r", flush=True)
+                                if (result != ""):
+                                    if (verbose_level > 1): 
+                                        print ( result, "- Expected no data but the field was non-blank",end="\r", flush=True)
                                 if (result == "fault"): break 
                                
                             if (data['fields'][colnr]['constraints']['blank'] == "false"):               
@@ -186,7 +189,9 @@ else:
                                         if (value == row[colnr]): Found = True;    
                                     if (Found == False):
                                         result = data['fields'][colnr]['enforce']['values']
-                                        if (result != ""): print ( result, "- Invalid value, expected %s" % values, end="\r", flush=True)
+                                        if (result != ""):
+                                            if (verbose_level > 1):
+                                                print ( result, "- Invalid value, expected %s" % values, end="\r", flush=True)
                                         if (result == "fault"): break
                                                                 
                                               
@@ -196,24 +201,31 @@ else:
                                     match = regexp.match(row[colnr])
                                     if (not match):
                                         result = data['fields'][colnr]['enforce']['regex']
-                                        if (result != "" ): print ( result, "- RegEx check, expected %s" % check, end="\r", flush=True)
+                                        if (result != "" ):
+                                            if (verbose_level > 1): 
+                                                print ( result, "- RegEx check, expected %s" % check, end="\r", flush=True)
                                         if (result == "fault"): break
                             
                                     fieldtype = data['fields'][colnr]['constraints']['type']                                      
                                     if (fieldtype == "int"):
                                         minval = data['fields'][colnr]['constraints']['min']   
                                         maxval = data['fields'][colnr]['constraints']['max']
-                                        value =  row[colnr]                  
-                                        if (value < minval ): 
-                                            result = data['fields'][colnr]['enforce']['min']
-                                            if (result != ""): print ( result, "- Number too low, expected < %s" % minval, end="\r", flush=True)
-                                            if (result == "fault"): break
-                                        if (value > maxval ): 
-                                            result = data['fields'][colnr]['enforce']['max']
-                                            if (result != ""): print ( result, "- Number too high, expected > %s" % maxval,  end="\r", flush=True)
-                                            if (result == "fault"): break 
-        
-                            
+                                        value =  row[colnr]
+                                        if (minval != ""):                
+                                            if (value < minval ): 
+                                                result = data['fields'][colnr]['enforce']['min']
+                                                if (result != ""):
+                                                    if (verbose_level > 1): 
+                                                        print ( result, "- Number too low, expected >= %s" % str(minval), end="\r", flush=True)
+                                                if (result == "fault"): break
+                                        if (maxval != ""):
+                                            if (value > maxval ): 
+                                                result = data['fields'][colnr]['enforce']['max']
+                                                if (result != ""):
+                                                    if (verbose_level > 1): 
+                                                        print ( result, "- Number too high, expected <= %s" % str(maxval),  end="\r", flush=True)
+                                                if (result == "fault"): break 
+                                    
                             #time.sleep(.1)            
                             colnr = colnr + 1
                             #print("", end="", flush=True)
@@ -222,7 +234,7 @@ else:
                     if (result == "fault"):
                         error_data_count = error_data_count + 1
                         if (error_data_count > error_data_max):
-                            sys.exit('Error: Data fault condition encountered and maximum number of allowed errors exceeded')
+                            sys.exit('\nError: Data fault condition encountered and maximum number of allowed errors exceeded')
                         else:
                             result = ""                                                                
                     #if (rownr > 1000): break;     
@@ -233,9 +245,11 @@ else:
     except Exception as exception:    
         print ("Error: Problem opening or reading data file %s" % DataFileName)               
         sys.exit(1)     
-      
+    else:
+        end = time.time()
+        elapsed = end - start
+        print("%s record(s) processed without exceeding maximum allowed errors in %.2f seconds" % (rownr, elapsed))
+        sys.exit(0) 
    
-# 
-
-    
+   
     

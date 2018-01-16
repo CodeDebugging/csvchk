@@ -10,22 +10,23 @@
   },      
   "header": 
   {
-            "required": "true",
-            "regex":    "[a-z]",
-            "blank":    "false",
-            "position": "fixed" 
+            "required":    "true",
+            "regex":       "[a-z]",
+            "blank":       "false",
+            "position":    "fixed",
+            "whitespaces": "true"
   },
   "fields":
   [
         {
             "name": "Column1",
-            "title": "The first columns",
+            "title": "The first column",
             "constraints":   { "type":     "string", "required": "true",  "blank": "false", "regex": "[A-Z]",    "max": "",       "min":      "",  "values": ["Row1"]  },
 	        "enforce":       { "type":     "fault",  "required": "fault", "blank": "fault", "regex": "fault",    "max": "",       "min":      "",  "values": "fault" }
         },   
         {
             "name": "Column2",
-            "title": "The seconds clolumn",
+            "title": "The second column",
             "constraints":    {"type":     "string",  "required": "true", "blank":  "false", "regex": "",        "max": "",       "min":      "",  "values":  "" },
             "enforce":        {"type":     "fault",   "required": "fault","blank": "fault",  "regex": "",         "max": "",     "min":        "", "values":  "" }  
         } 
