@@ -22,8 +22,21 @@ Run the program csvchk \<data definition map file\> \<CSV file\>
 
 ## Known issues
 
-1. All files need to be in the same folder. loading definition, map  and CSV files using a path prefix won't work.
-2. No header check yet  
+1. None
+
+### Latest Fixes made
+
+- Data csv files can be in a subdirectory.
+- Header check implemented
+
+## To Do
+
+- Allow header be random in the header
+- Header column required check
+- Email  and email distribution list when failure found
+
+
+
  
 
  
