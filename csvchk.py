@@ -1,4 +1,4 @@
-#import os
+import os
 import sys
 import json
 import csv
@@ -14,6 +14,11 @@ start = time.time()
 
 error_data_max = 0
 error_data_count = 0
+# 0 no output
+# 1 row count displayed and faults
+# 2 row count faults and warnings
+# 3 row count, faults, warnings, data
+ 
 verbose_level = 2
 
 print ("csvchk - CSV file validation tool - version 1.0")
@@ -44,7 +49,7 @@ else:
         for mapping in maps:
             check = mapping['regex']   
             regexp = re.compile(check)
-            match = regexp.match(DataFileName)
+            match = regexp.match(os.path.basename(DataFileName))
             if (match):
                 #print(" match")   
                 DataDefinitionFileName = mapping['file']
@@ -140,7 +145,7 @@ else:
                 for row in reader:
 
                     if (verbose_level > 0):
-                        print("row:", rownr + 1, end='\n', flush=True)                                                             
+                        print("row:", rownr + 1, end='\r', flush=True)                                                             
                     cols = len(row)
                               
                     # Check if number of columns in file are more  than in definition file.
@@ -165,21 +170,27 @@ else:
                             #    print ( result, "- Required check", end="\r", flush=True)
                             #    if (result == "fault"): break  
         
+                            blank = False
+
                             if ((data['fields'][colnr]['constraints']['blank'] == "false") and (row[colnr] == "")):
+                                blank = True
                                 result = data['fields'][colnr]['enforce']['blank']
                                 if (result != ""):
                                     if (verbose_level > 1):
                                         print ( result, "- Expected data but field was blank",end="\r", flush=True)
-                                if (result == "fault"): break
+                                if (result == "fault"):                                                                       
+                                        break
                                 
                             if ((data['fields'][colnr]['constraints']['blank'] == "true") and (row[colnr] != "")):
-                                result = data['fields'][colnr]['enforce']['blank']
+                                blank = False
+                                result = data['fields'][colnr]['enforce']['blank']                                                              
                                 if (result != ""):
                                     if (verbose_level > 1): 
                                         print ( result, "- Expected no data but the field was non-blank",end="\r", flush=True)
                                 if (result == "fault"): break 
-                               
-                            if (data['fields'][colnr]['constraints']['blank'] == "false"):               
+                             
+                            if (blank == False):  
+                            #if (data['fields'][colnr]['constraints']['blank'] == "false"):               
                                 values = data['fields'][colnr]['constraints']['values']
                                 count = 0
                                 if (values != ""):
